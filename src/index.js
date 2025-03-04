@@ -10,7 +10,8 @@ import amenityRoutes from './routes/amenities.js';
 import bookingRoutes from './routes/bookings.js';
 import reviewRoutes from './routes/reviews.js';
 
-
+// Importeer de middleware
+import authMiddleware from './middleware/authMiddleware.js';
 
 const app = express();
 app.use(cors());
@@ -21,16 +22,16 @@ app.get('/test', (req, res) => {
   res.send('Test werkt!');
 });
 
-// Routes
-app.use('/users', userRoutes);  // Route voor gebruikers
+// Openbare routes (zonder authenticatie vereist)
 app.use('/login', authRoutes);   // Route voor login (gebruik '/login' voor authenticatie)
-app.use('/properties', propertyRoutes);  // Voeg hier de properties route toe
-app.use('/hosts', hostRoutes);  // Voeg de hosts route toe
-app.use('/amenities', amenityRoutes);  // ✅ Routes voor voorzieningen
-app.use('/bookings', bookingRoutes);  // Voeg de bookings route toe
-app.use('/reviews', reviewRoutes);  // Voeg de review route toe
 
-
+// Beveiligde routes (met authMiddleware)
+app.use('/users', authMiddleware, userRoutes);  // Route voor gebruikers, alleen voor geauthenticeerde gebruikers
+app.use('/properties', authMiddleware, propertyRoutes);  // Route voor properties, alleen voor geauthenticeerde gebruikers
+app.use('/hosts', authMiddleware, hostRoutes);  // Route voor hosts, alleen voor geauthenticeerde gebruikers
+app.use('/amenities', authMiddleware, amenityRoutes);  // Route voor voorzieningen, alleen voor geauthenticeerde gebruikers
+app.use('/bookings', authMiddleware, bookingRoutes);  // Route voor bookings, alleen voor geauthenticeerde gebruikers
+app.use('/reviews', authMiddleware, reviewRoutes);  // Route voor reviews, alleen voor geauthenticeerde gebruikers
 
 // Start de server
 const PORT = process.env.PORT || 3000;

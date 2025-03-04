@@ -1,10 +1,38 @@
 import express from 'express';
+import authMiddleware from '../middleware/authMiddleware.js';  // Voeg de authMiddleware toe
 import propertyService from '../services/propertyService.js';
 
 const router = express.Router();
 
-// POST route voor het aanmaken van een nieuwe accommodatie
-router.post('/', async (req, res) => {
+// ✅ Haal alle accommodaties op (zonder authenticatie)
+router.get('/', async (req, res) => {
+  try {
+    const properties = await propertyService.getAllProperties();
+    res.json(properties);  // Stuur de lijst met accommodaties terug
+  } catch (error) {
+    console.error('Fout bij ophalen van accommodaties:', error);
+    res.status(500).json({ message: 'Fout bij ophalen van accommodaties', error: error.message });
+  }
+});
+
+// ✅ Haal een specifieke accommodatie op via ID (zonder authenticatie)
+router.get('/:id', async (req, res) => {
+  try {
+    const property = await propertyService.getPropertyById(req.params.id);
+    
+    if (!property) {
+      return res.status(404).json({ message: 'Accommodatie niet gevonden' });
+    }
+    
+    res.json(property);  // Stuur de accommodatie terug als JSON
+  } catch (error) {
+    console.error('Fout bij ophalen van accommodatie:', error);
+    res.status(500).json({ message: 'Fout bij ophalen van accommodatie', error: error.message });
+  }
+});
+
+// ✅ Maak een nieuwe accommodatie aan (met authenticatie)
+router.post('/', authMiddleware, async (req, res) => {  // authMiddleware toegevoegd
   console.log("Ontvangen data voor nieuwe accommodatie:", req.body); // Log de ontvangen gegevens
 
   try {
@@ -25,35 +53,8 @@ router.post('/', async (req, res) => {
   }
 });
 
-// GET route voor het ophalen van alle accommodaties
-router.get('/', async (req, res) => {
-  try {
-    const properties = await propertyService.getAllProperties();
-    res.json(properties);  // Stuur de lijst met accommodaties terug
-  } catch (error) {
-    console.error('Fout bij ophalen van accommodaties:', error);
-    res.status(500).json({ message: 'Fout bij ophalen van accommodaties', error: error.message });
-  }
-});
-
-// GET route voor het ophalen van een specifieke accommodatie op basis van ID
-router.get('/:id', async (req, res) => {
-  try {
-    const property = await propertyService.getPropertyById(req.params.id);
-    
-    if (!property) {
-      return res.status(404).json({ message: 'Accommodatie niet gevonden' });
-    }
-    
-    res.json(property);  // Stuur de accommodatie terug als JSON
-  } catch (error) {
-    console.error('Fout bij ophalen van accommodatie:', error);
-    res.status(500).json({ message: 'Fout bij ophalen van accommodatie', error: error.message });
-  }
-});
-
-// PUT route voor het bijwerken van een accommodatie
-router.put('/:id', async (req, res) => {
+// ✅ Werk een bestaande accommodatie bij (PUT) (met authenticatie)
+router.put('/:id', authMiddleware, async (req, res) => {  // authMiddleware toegevoegd
   try {
     const { hostId } = req.body;  // Verkrijg de hostId vanuit de body
     const updatedProperty = await propertyService.updateProperty(req.params.id, hostId, req.body);
@@ -64,8 +65,8 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// DELETE route voor het verwijderen van een accommodatie
-router.delete('/:id', async (req, res) => {
+// ✅ Verwijder een accommodatie (DELETE) (met authenticatie)
+router.delete('/:id', authMiddleware, async (req, res) => {  // authMiddleware toegevoegd
   const { hostId } = req.body;  // Verkrijg de hostId vanuit de body
   try {
     const deleted = await propertyService.deleteProperty(req.params.id, hostId);

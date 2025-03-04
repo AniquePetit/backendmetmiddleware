@@ -1,4 +1,5 @@
 import express from 'express';
+import authMiddleware from '../middleware/authMiddleware.js';  // Voeg de middleware toe
 import { 
   getAllAmenities, 
   getAmenityById, 
@@ -9,7 +10,7 @@ import {
 
 const router = express.Router();
 
-// ✅ Haal alle voorzieningen op
+// ✅ Haal alle voorzieningen op (zonder authenticatie)
 router.get('/', async (req, res) => {
   try {
     const amenities = await getAllAmenities();
@@ -20,7 +21,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// ✅ Haal een specifieke voorziening op
+// ✅ Haal een specifieke voorziening op (zonder authenticatie)
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -36,13 +37,13 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// ✅ Maak een nieuwe voorziening aan
-router.post('/', async (req, res) => {  
+// ✅ Maak een nieuwe voorziening aan (met authenticatie)
+router.post('/', authMiddleware, async (req, res) => {  // authMiddleware toegevoegd
   try {
     const { name } = req.body;
     if (!name) return res.status(400).json({ message: 'Naam is verplicht' });
 
-    const newAmenity = await createAmenity({ name }); // 🛠️ Fix: Stuur alleen `name`
+    const newAmenity = await createAmenity({ name });
     res.status(201).json(newAmenity);
   } catch (error) {
     console.error(error);
@@ -50,8 +51,8 @@ router.post('/', async (req, res) => {
   }
 });
 
-// ✅ Update een bestaande voorziening
-router.put('/:id', async (req, res) => {  
+// ✅ Update een bestaande voorziening (met authenticatie)
+router.put('/:id', authMiddleware, async (req, res) => {  // authMiddleware toegevoegd
   try {
     const { id } = req.params;
     const { name } = req.body;
@@ -78,8 +79,8 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// ✅ Verwijder een voorziening
-router.delete('/:id', async (req, res) => {  
+// ✅ Verwijder een voorziening (met authenticatie)
+router.delete('/:id', authMiddleware, async (req, res) => {  // authMiddleware toegevoegd
   try {
     const { id } = req.params;
 

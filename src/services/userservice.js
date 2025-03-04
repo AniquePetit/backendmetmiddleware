@@ -1,5 +1,5 @@
-import prisma from '../prisma/prismaClient.js'; // Zorg ervoor dat dit klopt met jouw import
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
+import prisma from '../prisma/prismaClient.js'; // Zorg ervoor dat dit pad klopt
 
 // Haal een gebruiker op via ID
 const getUserById = async (id) => {

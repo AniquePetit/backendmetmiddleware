@@ -1,7 +1,8 @@
-import jwt from 'jsonwebtoken'; // gebruik 'import' in plaats van 'require'
-const SECRET_KEY = process.env.JWT_SECRET || 'geheime_sleutel';
+import jwt from 'jsonwebtoken';
 
-// ✅ Middleware om JWT te controleren
+// Gebruik AUTH_SECRET_KEY uit de omgevingsvariabelen
+const SECRET_KEY = process.env.AUTH_SECRET_KEY || 'geheime_sleutel'; // Standaard als er geen .env is
+
 const authMiddleware = (req, res, next) => {
   const token = req.header('Authorization')?.split(' ')[1];
 
@@ -11,11 +12,12 @@ const authMiddleware = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, SECRET_KEY);
-    req.user = decoded; // Opslaan van de ingelogde gebruiker
+    req.user = decoded;
     next();
   } catch (error) {
+    console.error('JWT verificatie mislukt:', error.message); // Foutlog voor debugging
     res.status(401).json({ message: 'Ongeldige token' });
   }
 };
 
-export default authMiddleware; // gebruik 'export default' in plaats van 'module.exports'
+export default authMiddleware;

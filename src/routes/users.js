@@ -1,10 +1,11 @@
 import express from 'express';
+import authMiddleware from '../middleware/authMiddleware.js';  // Zorg ervoor dat je de juiste pad hebt
 import { getAllUsers, createUser, getUserById, updateUser, deleteUser } from '../services/userService.js';
 
 const router = express.Router();
 
-// ✅ Haal alle gebruikers op (GET route)
-router.get('/', async (req, res) => {
+// ✅ Haal alle gebruikers op (GET route) - Beveiligd
+router.get('/', authMiddleware, async (req, res) => {  // authMiddleware toegevoegd
   try {
     const users = await getAllUsers();
     res.json(users);
@@ -13,8 +14,8 @@ router.get('/', async (req, res) => {
   }
 });
 
-// ✅ Maak een nieuwe gebruiker aan (POST route)
-router.post('/', async (req, res) => {
+// ✅ Maak een nieuwe gebruiker aan (POST route) - Beveiligd
+router.post('/', authMiddleware, async (req, res) => {  // authMiddleware toegevoegd
   try {
     const userData = req.body;
 
@@ -31,8 +32,8 @@ router.post('/', async (req, res) => {
   }
 });
 
-// ✅ Haal een specifieke gebruiker op (GET route)
-router.get('/:id', async (req, res) => {
+// ✅ Haal een specifieke gebruiker op (GET route) - Beveiligd
+router.get('/:id', authMiddleware, async (req, res) => {  // authMiddleware toegevoegd
   try {
     const { id } = req.params;
     const user = await getUserById(id);
@@ -47,8 +48,8 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// ✅ Werk een bestaande gebruiker bij (PUT route)
-router.put('/:id', async (req, res) => {
+// ✅ Werk een bestaande gebruiker bij (PUT route) - Beveiligd
+router.put('/:id', authMiddleware, async (req, res) => {  // authMiddleware toegevoegd
   try {
     const { id } = req.params;  // Haal het ID uit de URL
     const { name, email, phoneNumber, pictureUrl } = req.body;  // Gegevens uit de request body
@@ -71,8 +72,8 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// ✅ Verwijder een gebruiker (DELETE route)
-router.delete('/:id', async (req, res) => {
+// ✅ Verwijder een gebruiker (DELETE route) - Beveiligd
+router.delete('/:id', authMiddleware, async (req, res) => {  // authMiddleware toegevoegd
   try {
     const { id } = req.params;  // Haal het ID uit de URL
 

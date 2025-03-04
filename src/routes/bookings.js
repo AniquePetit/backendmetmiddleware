@@ -1,9 +1,10 @@
 import express from 'express';
+import authMiddleware from '../middleware/authMiddleware.js';  // Voeg de middleware toe
 import * as bookingService from '../services/bookingService.js';
 
 const router = express.Router();
 
-// ✅ Haal alle boekingen op
+// ✅ Haal alle boekingen op (zonder authenticatie)
 router.get('/', async (req, res) => {
   try {
     const bookings = await bookingService.getAllBookings();
@@ -13,10 +14,10 @@ router.get('/', async (req, res) => {
   }
 });
 
-// ✅ Maak een nieuwe boeking aan
-router.post('/', async (req, res) => {
+// ✅ Maak een nieuwe boeking aan (met authenticatie)
+router.post('/', authMiddleware, async (req, res) => {  // authMiddleware toegevoegd
   try {
-    const { userId, propertyId, checkinDate, checkoutDate, numberOfGuests, totalPrice } = req.body;
+    const { userId, propertyId, checkinDate, checkoutDate, numberOfGuests, totalPrice, bookingStatus } = req.body;
 
     console.log('Ontvangen body:', req.body); // Log de ontvangen body
 
@@ -33,6 +34,7 @@ router.post('/', async (req, res) => {
       checkoutDate,
       numberOfGuests,
       totalPrice,
+      bookingStatus: bookingStatus || "pending", // Zet "pending" als de status niet is meegegeven
     });
 
     res.status(201).json(newBooking);
@@ -42,8 +44,8 @@ router.post('/', async (req, res) => {
   }
 });
 
-// ✅ Werk een bestaande boeking bij (PUT)
-router.put('/:id', async (req, res) => {
+// ✅ Werk een bestaande boeking bij (PUT) (met authenticatie)
+router.put('/:id', authMiddleware, async (req, res) => {  // authMiddleware toegevoegd
   try {
     const id = req.params.id;
     const { checkinDate, checkoutDate, numberOfGuests, totalPrice, bookingStatus } = req.body;
@@ -66,8 +68,8 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// ✅ Verwijder een boeking (DELETE)
-router.delete('/:id', async (req, res) => {
+// ✅ Verwijder een boeking (DELETE) (met authenticatie)
+router.delete('/:id', authMiddleware, async (req, res) => {  // authMiddleware toegevoegd
   try {
     const id = req.params.id;
 

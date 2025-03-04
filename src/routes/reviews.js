@@ -1,9 +1,10 @@
 import express from 'express';
+import authMiddleware from '../middleware/authMiddleware.js';  // Voeg de authMiddleware toe
 import { getAllReviews, getReviewById, createReview, updateReview, deleteReview } from '../services/reviewService.js';
 
 const router = express.Router();
 
-// ✅ Haal alle reviews op
+// ✅ Haal alle reviews op (zonder authenticatie)
 router.get('/', async (req, res) => {
   try {
     const reviews = await getAllReviews();
@@ -14,7 +15,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// ✅ Haal een specifieke review op via ID
+// ✅ Haal een specifieke review op via ID (zonder authenticatie)
 router.get('/:id', async (req, res) => {
   try {
     const id = req.params.id; // ✅ UUID blijft een string!
@@ -30,8 +31,8 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// ✅ Maak een nieuwe review aan
-router.post('/', async (req, res) => {
+// ✅ Maak een nieuwe review aan (met authenticatie)
+router.post('/', authMiddleware, async (req, res) => {  // authMiddleware toegevoegd
   try {
     const { userId, propertyId, rating, comment } = req.body;
 
@@ -47,8 +48,8 @@ router.post('/', async (req, res) => {
   }
 });
 
-// ✅ **Werk een bestaande review bij (PUT)**
-router.put('/:id', async (req, res) => {
+// ✅ Werk een bestaande review bij (PUT) (met authenticatie)
+router.put('/:id', authMiddleware, async (req, res) => {  // authMiddleware toegevoegd
   try {
     const id = req.params.id; // ✅ UUID blijft een string!
     
@@ -65,8 +66,8 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// ✅ **Verwijder een review via ID (DELETE)**
-router.delete('/:id', async (req, res) => {
+// ✅ Verwijder een review via ID (DELETE) (met authenticatie)
+router.delete('/:id', authMiddleware, async (req, res) => {  // authMiddleware toegevoegd
   try {
     const id = req.params.id; // Haal de review ID op uit de URL
 

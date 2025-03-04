@@ -1,9 +1,10 @@
 import express from 'express';
-import hostService from '../services/hostService.js'; // Importeren van de host service
+import authMiddleware from '../middleware/authMiddleware.js';  // Voeg de middleware toe
+import hostService from '../services/hostService.js';
 
 const router = express.Router();
 
-// Route om alle hosts op te halen
+// ✅ Haal alle hosts op (zonder authenticatie)
 router.get('/', async (req, res) => {
   try {
     const hosts = await hostService.getAllHosts();  // Gebruik de getAllHosts functie van hostService
@@ -14,7 +15,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Route om één host op te halen via ID
+// ✅ Haal één host op via ID (zonder authenticatie)
 router.get('/:id', async (req, res) => {
   try {
     const host = await hostService.getHostById(req.params.id);  // Gebruik getHostById functie van hostService
@@ -25,8 +26,8 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Route om een nieuwe host aan te maken
-router.post('/', async (req, res) => {
+// ✅ Maak een nieuwe host aan (met authenticatie)
+router.post('/', authMiddleware, async (req, res) => {  // authMiddleware toegevoegd
   try {
     const newHost = await hostService.createHost(req.body);  // Gebruik createHost functie van hostService
     res.status(201).json(newHost);  // Response met de aangemaakte host
@@ -36,8 +37,8 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Route om een host bij te werken
-router.put('/:id', async (req, res) => {
+// ✅ Werk een bestaande host bij (PUT) (met authenticatie)
+router.put('/:id', authMiddleware, async (req, res) => {  // authMiddleware toegevoegd
   try {
     const updatedHost = await hostService.updateHost(req.params.id, req.body);  // Gebruik updateHost functie van hostService
     res.json(updatedHost);  // Response met de bijgewerkte host
@@ -47,8 +48,8 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Route om een host te verwijderen
-router.delete('/:id', async (req, res) => {
+// ✅ Verwijder een host (DELETE) (met authenticatie)
+router.delete('/:id', authMiddleware, async (req, res) => {  // authMiddleware toegevoegd
   try {
     const result = await hostService.deleteHost(req.params.id);  // Gebruik deleteHost functie van hostService
     res.json(result);  // Response met het resultaat van de verwijdering
