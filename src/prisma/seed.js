@@ -1,3 +1,4 @@
+import bcrypt from 'bcrypt';
 import { PrismaClient } from '@prisma/client';
 import amenityData from '../data/amenities.json' assert { type: 'json' };
 import bookingData from '../data/bookings.json' assert { type: 'json' };
@@ -5,9 +6,11 @@ import hostData from '../data/hosts.json' assert { type: 'json' };
 import propertyData from '../data/properties.json' assert { type: 'json' };
 import reviewData from '../data/reviews.json' assert { type: 'json' };
 import userData from '../data/users.json' assert { type: 'json' };
-import { v4 as uuidv4 } from 'uuid';  // Importeer de uuid package voor UUID generatie
+import { v4 as uuidv4 } from 'uuid';
 
 const prisma = new PrismaClient({ log: ["query", "info", "warn", "error"] });
+
+const saltRounds = 10; // Het aantal keren dat bcrypt het wachtwoord gaat "verharden"
 
 async function main() {
     const { amenities } = amenityData;
@@ -36,29 +39,29 @@ async function main() {
     }
 
     // Upsert Users
-for (const user of users) {
-    const userId = user.id || uuidv4(); // Genereer UUID als er geen id is
-    await prisma.user.upsert({
-        where: { id: userId },
-        update: {},
-        create: {
-            id: userId, 
-            name: user.name,
-            email: user.email,
-            password: user.password,
-            username: user.username,
-            phoneNumber: user.phoneNumber,
-            profilePicture: user.profilePicture,
-            pictureUrl: user.pictureUrl || "https://example.com/default-profile-pic.jpg",
-        },
-    });
+    for (const user of users) {
+        const userId = user.id || uuidv4(); // Genereer UUID als er geen id is
+        const hashedPassword = await bcrypt.hash(user.password, saltRounds); // Hash het wachtwoord
 
-
+        await prisma.user.upsert({
+            where: { id: userId },
+            update: {},
+            create: {
+                id: userId, 
+                name: user.name,
+                email: user.email,
+                password: hashedPassword, // Sla het gehashte wachtwoord op
+                username: user.username,
+                phoneNumber: user.phoneNumber,
+                profilePicture: user.profilePicture,
+                pictureUrl: user.pictureUrl || "https://example.com/default-profile-pic.jpg",
+            },
+        });
     }
 
     // Upsert Properties
     for (const property of properties) {
-        const propertyId = property.id || uuidv4(); // Genereer UUID als er geen id is
+        const propertyId = property.id || uuidv4();
         await prisma.property.upsert({
             where: { id: propertyId },
             update: {},
@@ -81,25 +84,23 @@ for (const user of users) {
 
     // Upsert Bookings
     for (const booking of bookings) {
-        // Valideer of de UUID's van gebruikers en hosts bestaan
         if (!users.some(user => user.id === booking.userId)) {
             console.error(`User with id ${booking.userId} not found!`);
-            continue; // Skip deze boeking als de gebruiker niet bestaat
+            continue;
         }
 
         if (!hosts.some(host => host.id === booking.hostId)) {
             console.error(`Host with id ${booking.hostId} not found!`);
-            continue; // Skip deze boeking als de host niet bestaat
+            continue;
         }
 
-        // Genereer UUID voor booking als deze nog niet bestaat
-        const bookingId = booking.id || uuidv4(); // Als er geen id is, genereer dan een nieuwe UUID
+        const bookingId = booking.id || uuidv4();
 
         await prisma.booking.upsert({
             where: { id: bookingId },
             update: {},
             create: {
-                id: bookingId,  // UUID voor booking id
+                id: bookingId,
                 title: booking.title,
                 userId: booking.userId,
                 propertyId: booking.propertyId,
@@ -115,12 +116,12 @@ for (const user of users) {
 
     // Upsert Reviews
     for (const review of reviews) {
-        const reviewId = review.id || uuidv4(); // Genereer UUID voor review als er geen id is
+        const reviewId = review.id || uuidv4();
         await prisma.review.upsert({
             where: { id: reviewId },
             update: {},
             create: {
-                id: reviewId,  // UUID voor review id
+                id: reviewId,
                 userId: review.userId,
                 propertyId: review.propertyId,
                 rating: review.rating,

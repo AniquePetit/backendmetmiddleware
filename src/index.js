@@ -3,7 +3,7 @@ import express from 'express';
 import cors from 'cors';
 
 import userRoutes from './routes/users.js';
-import authRoutes from './routes/auth.js'; 
+import authRouter from './routes/auth.js';  // Zorg ervoor dat het pad klopt
 import propertyRoutes from './routes/properties.js';  
 import hostRoutes from './routes/hosts.js'; 
 import amenityRoutes from './routes/amenities.js';  
@@ -22,8 +22,7 @@ app.get('/test', (req, res) => {
   res.send('Test werkt!');
 });
 
-// Openbare routes (zonder authenticatie vereist)
-app.use('/login', authRoutes);   // Route voor login (gebruik '/login' voor authenticatie)
+app.use('/', authRouter); 
 
 // Beveiligde routes (met authMiddleware)
 app.use('/users', authMiddleware, userRoutes);  // Route voor gebruikers, alleen voor geauthenticeerde gebruikers
@@ -32,6 +31,22 @@ app.use('/hosts', authMiddleware, hostRoutes);  // Route voor hosts, alleen voor
 app.use('/amenities', authMiddleware, amenityRoutes);  // Route voor voorzieningen, alleen voor geauthenticeerde gebruikers
 app.use('/bookings', authMiddleware, bookingRoutes);  // Route voor bookings, alleen voor geauthenticeerde gebruikers
 app.use('/reviews', authMiddleware, reviewRoutes);  // Route voor reviews, alleen voor geauthenticeerde gebruikers
+
+// Foutafhandelingsroute
+app.use((req, res, next) => {
+  const error = new Error('Not Found');
+  error.status = 404;
+  next(error);
+});
+
+// Algemene foutafhandelingsmiddleware
+app.use((error, req, res, next) => {
+  res.status(error.status || 500);
+  res.json({
+    message: error.message,
+    error: process.env.NODE_ENV === 'development' ? error : {},
+  });
+});
 
 // Start de server
 const PORT = process.env.PORT || 3000;
