@@ -1,17 +1,32 @@
+// src/routes/hosts.js
 import express from 'express';
 import authMiddleware from '../middleware/authMiddleware.js';  // Voeg de middleware toe
-import hostService from '../services/hostService.js';
+import prisma from '../../prisma/migrations/prismaClient.js';
+import hostService from '../services/hostService.js'; // Zorg ervoor dat je de juiste path hebt naar je hostService
 
 const router = express.Router();
 
-// ✅ Haal alle hosts op (zonder authenticatie)
+// ✅ Haal alle hosts op (met ondersteuning voor queryparameter 'name')
 router.get('/', async (req, res) => {
+  const { name } = req.query;  // Haal de 'name' queryparameter op
+
   try {
-    const hosts = await hostService.getAllHosts();  // Gebruik de getAllHosts functie van hostService
-    res.json(hosts);  // Response met alle hosts
+    // Zoek hosts op basis van de opgegeven queryparameter 'name'
+    const hosts = await prisma.host.findMany({
+      where: {
+        name: name ? { contains: name } : undefined, // Geen 'mode' meer
+      },
+    });
+    
+
+    if (hosts.length === 0) {
+      return res.status(404).json({ message: 'Geen hosts gevonden' });
+    }
+
+    res.json(hosts);
   } catch (error) {
-    console.log('Fout bij het ophalen van hosts:', error);
-    res.status(500).json({ message: error.message });  // Stuur een foutmelding naar de client
+    console.error('Fout bij het ophalen van hosts:', error);
+    res.status(500).json({ message: 'Fout bij ophalen van hosts' });
   }
 });
 
@@ -59,4 +74,4 @@ router.delete('/:id', authMiddleware, async (req, res) => {  // authMiddleware t
   }
 });
 
-export default router;  // Exporteer de router zodat deze in andere delen van de app gebruikt kan worden
+export default router;

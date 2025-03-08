@@ -19,6 +19,16 @@ const getAllProperties = async () => {
   }
 };
 
+// Functie om gefilterde accommodaties op te halen op basis van queryparameters
+const getFilteredProperties = async (query) => {
+  try {
+    return await prisma.property.findMany(query);
+  } catch (error) {
+    console.error('Fout bij ophalen van accommodaties met zoekparameters:', error);
+    throw new Error('Fout bij ophalen van accommodaties met zoekparameters');
+  }
+};
+
 // Functie om accommodatie op te halen via ID
 const getPropertyById = async (id) => {
   try {
@@ -136,4 +146,5 @@ export default {
   createProperty,
   updateProperty,
   deleteProperty,
+  getFilteredProperties,  // Zorg ervoor dat deze wordt geëxporteerd
 };

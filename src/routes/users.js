@@ -1,11 +1,12 @@
+// src/routes/users.js
 import express from 'express';
-import authMiddleware from '../middleware/authMiddleware.js';  // Zorg ervoor dat je de juiste pad hebt
-import { getAllUsers, createUser, getUserById, updateUser, deleteUser } from '../services/userService.js';
+import authMiddleware from '../middleware/authMiddleware.js';  // Voeg de middleware toe
+import { getAllUsers, createUser, getUserById, updateUser, deleteUser } from '../services/userservice.js';
 
 const router = express.Router();
 
-// ✅ Haal alle gebruikers op (GET route) - Beveiligd
-router.get('/', authMiddleware, async (req, res) => {  // authMiddleware toegevoegd
+// ✅ Haal alle gebruikers op (GET route) - Dit kan publiek zijn of beveiligd, afhankelijk van je eisen
+router.get('/', async (req, res) => {  // authMiddleware is **niet** toegevoegd, omdat dit publiek kan zijn
   try {
     const users = await getAllUsers();
     res.json(users);
@@ -14,8 +15,8 @@ router.get('/', authMiddleware, async (req, res) => {  // authMiddleware toegevo
   }
 });
 
-// ✅ Maak een nieuwe gebruiker aan (POST route) - Beveiligd
-router.post('/', authMiddleware, async (req, res) => {  // authMiddleware toegevoegd
+// ✅ Maak een nieuwe gebruiker aan (POST route) - Dit kan beveiligd zijn, afhankelijk van je eisen
+router.post('/', async (req, res) => {  // authMiddleware is **niet** toegevoegd omdat registratie openbaar kan zijn
   try {
     const userData = req.body;
 

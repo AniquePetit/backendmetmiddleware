@@ -6,42 +6,91 @@ const router = express.Router();
 
 // ✅ Maak een nieuwe accommodatie aan (met authenticatie)
 router.post('/', authMiddleware, async (req, res) => {
-  console.log("Ontvangen data voor nieuwe accommodatie:", req.body);  // Log de ontvangen request body
+  console.log("Ontvangen data voor nieuwe accommodatie:", req.body);
 
   try {
-    // Destructureer de velden uit de request body
-    const { title, description, location, pricePerNight, bedroomCount, bathRoomCount, maxGuestCount, rating, hostId } = req.body;
+    const {
+      title,
+      description,
+      location,
+      pricePerNight,
+      bedroomCount,
+      bathRoomCount,
+      maxGuestCount,
+      rating,
+      hostId
+    } = req.body;
 
-    // Log de velden individueel om te controleren of alles goed wordt ontvangen
-    console.log("title:", title);
-    console.log("description:", description);
-    console.log("location:", location);
-    console.log("pricePerNight:", pricePerNight);
-    console.log("bedroomCount:", bedroomCount);
-    console.log("bathRoomCount:", bathRoomCount);
-    console.log("maxGuestCount:", maxGuestCount);
-    console.log("rating:", rating);
-    console.log("hostId:", hostId);
-
-    // Zorg ervoor dat alle vereiste velden aanwezig zijn
+    // Validatie van de vereiste velden
     if (!title || !description || !location || !pricePerNight || !bedroomCount || !bathRoomCount || !maxGuestCount || !hostId) {
       return res.status(400).json({ message: 'Vereiste velden ontbreken' });
     }
 
-    // Maak de nieuwe property aan via de service
+    // Extra validatie voor numerieke velden
+    if (isNaN(pricePerNight) || isNaN(bedroomCount) || isNaN(bathRoomCount) || isNaN(maxGuestCount)) {
+      return res.status(400).json({ message: 'Prijs, slaapkamer, badkamer of max. gasten moeten geldige getallen zijn.' });
+    }
+
     const newProperty = await propertyService.createProperty(hostId, req.body);
-    res.status(201).json(newProperty);  // Stuur succesantwoord terug
+    console.log("Nieuwe accommodatie aangemaakt:", newProperty);  // Log de aangemaakte accommodatie
+    res.status(201).json(newProperty);
   } catch (error) {
     console.error('Fout bij aanmaken van accommodatie:', error);
     res.status(500).json({ message: 'Fout bij aanmaken van accommodatie', error: error.message });
   }
 });
 
-// ✅ Haal alle accommodaties op (zonder authenticatie)
+// ✅ Haal alle accommodaties op (met queryparameters zoals location, pricePerNight, amenities)
 router.get('/', async (req, res) => {
+  const { location, pricePerNight, amenities } = req.query;
+  console.log("Verzoek voor accommodaties ontvangen met query:", req.query);  // Log de ontvangen query
+
   try {
-    const properties = await propertyService.getAllProperties();
-    res.json(properties);  // Stuur de lijst met accommodaties terug
+    const query = {
+      include: {
+        host: true,
+        amenities: true,
+        bookings: true,
+        reviews: true,
+      },
+      where: {},
+    };
+
+    // Filteren op locatie
+    if (location) {
+      query.where.location = { contains: location };  // Verwijder de 'mode' parameter
+      console.log('Location filter applied:', location);  // Log de locatiefilter
+    }
+
+    // Filteren op prijs per nacht
+    if (pricePerNight) {
+      query.where.pricePerNight = parseFloat(pricePerNight);  // Zorg ervoor dat de prijs een nummer is
+      console.log('Price filter applied:', pricePerNight);  // Log de prijsfilter
+    }
+
+    // Filteren op amenities (voorzieningen)
+    if (amenities) {
+      const amenitiesArray = amenities.split(',').map(item => item.trim());  // Split de string in een array van voorzieningen
+      console.log('Filtering with amenities:', amenitiesArray);  // Log de filtering van amenities
+
+      // Voeg filter voor amenities toe
+      query.where.amenities = {
+        some: {
+          name: { in: amenitiesArray },  // Zoek accommodaties die de genoemde voorzieningen hebben
+        },
+      };
+    }
+
+    console.log('Query to Prisma:', query);  // Log de volledige query die naar Prisma wordt gestuurd
+
+    const properties = await propertyService.getFilteredProperties(query);
+    console.log('Properties found:', properties);  // Log de gevonden accommodaties
+
+    if (properties.length === 0) {
+      return res.status(404).json({ message: 'Geen accommodaties gevonden' });
+    }
+
+    res.json(properties);
   } catch (error) {
     console.error('Fout bij ophalen van accommodaties:', error);
     res.status(500).json({ message: 'Fout bij ophalen van accommodaties', error: error.message });
@@ -50,14 +99,15 @@ router.get('/', async (req, res) => {
 
 // ✅ Haal een specifieke accommodatie op via ID (zonder authenticatie)
 router.get('/:id', async (req, res) => {
+  console.log(`Verzoek om accommodatie met ID ${req.params.id} op te halen`);  // Log het ID voor ophalen van accommodatie
   try {
     const property = await propertyService.getPropertyById(req.params.id);
-    
+
     if (!property) {
       return res.status(404).json({ message: 'Accommodatie niet gevonden' });
     }
-    
-    res.json(property);  // Stuur de accommodatie terug als JSON
+
+    res.json(property);
   } catch (error) {
     console.error('Fout bij ophalen van accommodatie:', error);
     res.status(500).json({ message: 'Fout bij ophalen van accommodatie', error: error.message });
@@ -67,9 +117,19 @@ router.get('/:id', async (req, res) => {
 // ✅ Werk een bestaande accommodatie bij (PUT) (met authenticatie)
 router.put('/:id', authMiddleware, async (req, res) => {
   try {
-    const { hostId } = req.body;  // Verkrijg de hostId vanuit de body
+    const { hostId } = req.body;
+
+    // Log de ID van de accommodatie die wordt bijgewerkt
+    console.log(`Verzoek om accommodatie met ID ${req.params.id} bij te werken`, req.body);
+
     const updatedProperty = await propertyService.updateProperty(req.params.id, hostId, req.body);
-    res.json(updatedProperty);  // Stuur de bijgewerkte accommodatie terug
+
+    if (!updatedProperty) {
+      return res.status(404).json({ message: 'Accommodatie niet gevonden voor bijwerken' });
+    }
+
+    console.log("Accommodatie bijgewerkt:", updatedProperty);  // Log de bijgewerkte accommodatie
+    res.json(updatedProperty);
   } catch (error) {
     console.error('Fout bij bijwerken van accommodatie:', error);
     res.status(500).json({ message: 'Fout bij bijwerken van accommodatie', error: error.message });
@@ -78,14 +138,22 @@ router.put('/:id', authMiddleware, async (req, res) => {
 
 // ✅ Verwijder een accommodatie (DELETE) (met authenticatie)
 router.delete('/:id', authMiddleware, async (req, res) => {
-  const { hostId } = req.body;  // Verkrijg de hostId vanuit de body
+  const { hostId } = req.body;
   try {
+    console.log(`Verzoek om accommodatie met ID ${req.params.id} te verwijderen`);  // Log het ID van de accommodatie die verwijderd wordt
+
     const deleted = await propertyService.deleteProperty(req.params.id, hostId);
-    res.json({ message: 'Accommodatie verwijderd', property: deleted });  // Bevestig dat de accommodatie verwijderd is
+
+    if (!deleted) {
+      return res.status(404).json({ message: 'Accommodatie niet gevonden voor verwijdering' });
+    }
+
+    console.log("Accommodatie verwijderd:", deleted);  // Log de verwijderde accommodatie
+    res.json({ message: 'Accommodatie verwijderd', property: deleted });
   } catch (error) {
     console.error('Fout bij verwijderen van accommodatie:', error);
     res.status(500).json({ message: 'Fout bij verwijderen van accommodatie', error: error.message });
   }
 });
 
-export default router;  // Exporteer de router zodat deze gebruikt kan worden in je hoofdapplicatie
+export default router;

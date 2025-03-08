@@ -1,10 +1,10 @@
 import bcrypt from 'bcryptjs';
-import prisma from '../prisma/prismaClient.js'; // Zorg ervoor dat dit pad klopt
+import prisma from '../../prisma/migrations/prismaClient.js'; // Zorg ervoor dat dit pad klopt
 
 // Haal een gebruiker op via ID
 const getUserById = async (id) => {
   return await prisma.user.findUnique({
-    where: { id: id },  // Zoek op basis van het ID
+    where: { id: id },
   });
 };
 
@@ -24,10 +24,10 @@ const updateUser = async (id, userData) => {
     return await prisma.user.update({
       where: { id: id },
       data: {
-        name: userData.name || user.name,  // Als naam niet wordt meegegeven, gebruik de bestaande naam
-        email: userData.email || user.email,  // Als email niet wordt meegegeven, gebruik de bestaande email
-        phoneNumber: userData.phoneNumber || user.phoneNumber,  // Als phoneNumber niet wordt meegegeven, gebruik de bestaande telefoonnummer
-        pictureUrl: userData.pictureUrl || user.pictureUrl,  // Als pictureUrl niet wordt meegegeven, gebruik de bestaande pictureUrl
+        name: userData.name || user.name,
+        email: userData.email || user.email,
+        phoneNumber: userData.phoneNumber || user.phoneNumber,
+        pictureUrl: userData.pictureUrl || user.pictureUrl,
       },
     });
   } catch (error) {
@@ -39,7 +39,6 @@ const updateUser = async (id, userData) => {
 // Verwijder een gebruiker
 const deleteUser = async (id) => {
   try {
-    // Zoek de gebruiker op basis van het ID
     const user = await prisma.user.findUnique({
       where: { id: id },
     });
@@ -48,7 +47,6 @@ const deleteUser = async (id) => {
       throw new Error('Gebruiker niet gevonden');
     }
 
-    // Verwijder de gebruiker
     return await prisma.user.delete({
       where: { id: id },
     });
@@ -60,33 +58,26 @@ const deleteUser = async (id) => {
 
 // Haal alle gebruikers op
 const getAllUsers = async () => {
-  return await prisma.user.findMany();  // Haal alle gebruikers op
+  return await prisma.user.findMany();
 };
 
 // Maak een nieuwe gebruiker aan
 const createUser = async (userData) => {
   try {
-    // Valideer de gegevens
     if (!userData.email || !userData.password || !userData.username || !userData.pictureUrl) {
       throw new Error('Email, password, username en pictureUrl zijn verplicht');
     }
 
-    // Controleer of de gebruiker al bestaat door naar het unieke 'username' te zoeken
     const existingUserByUsername = await prisma.user.findUnique({
-      where: {
-        username: userData.username,  // Zoek op basis van het unieke username
-      },
+      where: { username: userData.username },
     });
 
     if (existingUserByUsername) {
       throw new Error('Gebruiker met dit gebruikersnaam bestaat al');
     }
 
-    // Controleer of het e-mailadres al bestaat
     const existingUserByEmail = await prisma.user.findMany({
-      where: {
-        email: userData.email,  // Zoek op basis van email, maar dit is niet uniek
-      },
+      where: { email: userData.email },
     });
 
     if (existingUserByEmail.length > 0) {
@@ -96,19 +87,18 @@ const createUser = async (userData) => {
     // Wachtwoord hashen
     const hashedPassword = await bcrypt.hash(userData.password, 10);
 
-    // Maak de nieuwe gebruiker aan
     const newUser = await prisma.user.create({
       data: {
         email: userData.email,
         username: userData.username,
-        password: hashedPassword, // Sla het gehashte wachtwoord op
+        password: hashedPassword,
         name: userData.name,
         phoneNumber: userData.phoneNumber,
-        pictureUrl: userData.pictureUrl, // Zorg ervoor dat pictureUrl altijd wordt doorgegeven
+        pictureUrl: userData.pictureUrl,
       },
     });
 
-    return newUser;  // Retourneer de nieuwe gebruiker
+    return newUser;
   } catch (error) {
     console.error('Fout bij het aanmaken van gebruiker:', error);
     throw new Error(`Fout bij het aanmaken van gebruiker: ${error.message}`);

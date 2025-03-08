@@ -1,6 +1,6 @@
 import express from 'express';
 import authMiddleware from '../middleware/authMiddleware.js';  // Voeg de authMiddleware toe
-import { getAllReviews, getReviewById, createReview, updateReview, deleteReview } from '../services/reviewService.js';
+import { getAllReviews, getReviewById, createReview, updateReview, deleteReview } from '../services/reviewservice.js';
 
 const router = express.Router();
 

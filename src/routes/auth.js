@@ -1,44 +1,54 @@
 import express from 'express';
-import { login, register } from '../services/authservice.js';  // Zorg ervoor dat het pad klopt
+import { login, register, refreshAccessToken } from '../services/authservice.js';
 
 const router = express.Router();
 
-// POST /login route
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
-  // Controleer of de vereiste gegevens zijn ingevuld
   if (!email || !password) {
     return res.status(400).json({ error: 'Email en wachtwoord zijn verplicht' });
   }
 
-  // Roep de login functie aan uit authservice.js
   const result = await login(email, password);
 
-  // Als er een token is, stuur het terug, anders stuur een foutmelding
-  if (result.token) {
-    return res.json({ token: result.token });
+  if (result.accessToken && result.refreshToken) {
+    return res.json(result);
   } else {
     return res.status(401).json({ error: result.error });
   }
 });
 
-// POST /register route (registreer nieuwe gebruiker)
 router.post('/register', async (req, res) => {
   const { email, password, username, name, phoneNumber, profilePicture } = req.body;
 
-  // Controleer of de vereiste gegevens zijn ingevuld
   if (!email || !password || !username || !name || !phoneNumber || !profilePicture) {
-    return res.status(400).json({ error: 'Email, wachtwoord, gebruikersnaam, naam, telefoonnummer en profielplaatje zijn verplicht' });
+    return res.status(400).json({ error: 'Alle velden zijn verplicht' });
   }
 
-  // Roep de register functie aan uit authservice.js
   const result = await register(email, password, username, name, phoneNumber, profilePicture);
 
   if (result.user) {
     return res.status(201).json({ user: result.user });
   } else {
     return res.status(400).json({ error: result.error });
+  }
+});
+
+// Endpoint om een nieuw access token te krijgen met een refresh token
+router.post('/refresh', async (req, res) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    return res.status(400).json({ error: 'Refresh token is vereist' });
+  }
+
+  const result = await refreshAccessToken(refreshToken);
+
+  if (result.accessToken) {
+    return res.json(result);
+  } else {
+    return res.status(401).json({ error: result.error });
   }
 });
 
